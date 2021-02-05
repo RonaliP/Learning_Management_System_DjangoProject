@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from management.models import Student, EducationDetails
+from management.models import Student, EducationDetails,Course
 
 
 class UpdateStudentDetailsSerializer(serializers.ModelSerializer):
@@ -11,3 +11,8 @@ class UpdateEducationDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationDetails
         fields = ['course', 'institution', 'percentage']
+
+class AddCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['course_name']
