@@ -58,5 +58,5 @@ class NewPasswordSerializer(serializers.ModelSerializer):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
         if password != password2:
-            raise serializers.ValidationError("Password not matched!!")
+            raise serializers.ValidationError("BOTH PASSWORDS SHOULD BE SAME")
         return attrs
