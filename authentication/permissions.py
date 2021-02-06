@@ -10,3 +10,12 @@ class IsMentor(permissions.BasePermission):
             return True
         else:
             return False
+
+
+class IsStudent(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.user.role == 'Student':
+            return True
+        else:
+            return False
