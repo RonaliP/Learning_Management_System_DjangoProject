@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from management.models import Student, EducationDetails,Course
+from management.models import Student, EducationDetails,Course,Mentor,MentorStudent
 
 
 class UpdateStudentDetailsSerializer(serializers.ModelSerializer):
@@ -16,3 +16,17 @@ class AddCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['course_name']
+
+class MentorsSerializer(serializers.ModelSerializer):
+    mentor = serializers.StringRelatedField(read_only=True)
+    course = serializers.StringRelatedField(many=True, read_only=True)
+    class Meta:
+        model = Mentor
+        fields = ['mentor','course']
+
+
+class MentorCourseMappingSerializer(serializers.ModelSerializer):
+    mentor = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Mentor
+        fields = ['mentor', 'course']

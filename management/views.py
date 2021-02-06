@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from management.serializers import UpdateStudentDetailsSerializer, UpdateEducationDetailsSerializer,AddCourseSerializer
-from management.models import Student, EducationDetails,Course
-from authentication.permissions import IsAdmin
+from management.serializers import UpdateStudentDetailsSerializer, UpdateEducationDetailsSerializer,\
+    AddCourseSerializer,MentorsSerializer,MentorCourseMappingSerializer
+from management.models import Student, EducationDetails,Course,Mentor,MentorStudent
+from authentication.permissions import IsAdmin,IsMentor
 
 
 class UpdateStudentDetails(generics.RetrieveUpdateAPIView):
@@ -74,3 +75,51 @@ class CourseDetails(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         instance.delete()
         return Response({'response': 'Course is deleted permanently.'}, status=status.HTTP_204_NO_CONTENT)
+
+class Mentors(generics.ListAPIView):
+    permission_classes = (IsAuthenticated, IsAdmin)
+    serializer_class = MentorsSerializer
+    queryset = Mentor.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.all()
+
+
+class Mentordetails(generics.RetrieveAPIView):
+    permission_classes = (IsAuthenticated, IsMentor)
+    serializer_class = MentorsSerializer
+    lookup_field = "id"
+    queryset = Mentor.objects.all()
+    def get_queryset(self):
+        user = self.request.user
+        if user.role=='Mentor':
+            return self.queryset.filter(mentor=user)
+        elif user.role == 'Admin':
+            return self.queryset.all()
+
+
+class MentorCourseMapping(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated, IsAdmin,IsMentor)
+    serializer_class = MentorCourseMappingSerializer
+
+    def put(self, request, mentor_id):
+        try:
+            mentor = Mentor.objects.get(id = mentor_id)
+        except Mentor.DoesNotExist:
+            return Response({'response':'Mentor does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        courses = serializer.validated_data['course']
+        for course_data in courses:
+            course = Course.objects.get(course_name=course_data)
+            mentor.course.add(course.id)
+            mentor.save()
+        return Response({'response':'Course added successfully.'}, status=status.HTTP_200_OK)
+    def get(self,request, mentor_id):
+
+        mentor = Mentor.objects.filter(id=mentor_id)
+        if mentor:
+            serializer = MentorsSerializer(mentor, many=True)
+            return Response({'response':serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'response':'Not Found'}, status=status.HTTP_404_NOT_FOUND)
