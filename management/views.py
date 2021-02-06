@@ -5,21 +5,24 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from management.serializers import UpdateStudentDetailsSerializer, UpdateEducationDetailsSerializer,\
     AddCourseSerializer,MentorsSerializer,MentorCourseMappingSerializer
 from management.models import Student, EducationDetails,Course,Mentor,MentorStudent
-from authentication.permissions import IsAdmin,IsMentor
+from authentication.permissions import IsAdmin,IsMentor,IsStudent
 
 
 class UpdateStudentDetails(generics.RetrieveUpdateAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,IsStudent)
     serializer_class = UpdateStudentDetailsSerializer
+    queryset = Student.objects.all()
+    lookup_field = "id"
 
-    def get_object(self):
+
+    def get_queryset(self):
         """
             Returns current logged in student profile instance
         """
-        return self.request.user.student
-
-    def get_education_details(self):
-        return EducationDetails.object.get(student=self.get_object())
+        if self.request.user.role == 'Student':
+            return self.queryset.filter(id=self.kwargs[self.lookup_field], student=self.request.user)
+        else:
+            return self.queryset.all()
 
     def performe_update(self, serializer):
         """
@@ -32,15 +35,27 @@ class UpdateStudentDetails(generics.RetrieveUpdateAPIView):
 class UpdateEducationDetails(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UpdateEducationDetailsSerializer
+    queryset = Student.objects.all()
+    lookup_field = "id"
 
     def get_object(self):
-        return EducationDetails.objects.get(student=self.request.user.student)
+        """
+            Returns current logged in student profile instance
+        """
+
+        if self.request.user.role == 'Student':
+            return self.queryset.filter(id=self.kwargs[self.lookup_field], student=self.request.user.student)
+        else:
+            return self.queryset.all()
+
+
+
 
     def performe_update(self, serializer):
         """
             Save the updated user student instance
         """
-        student = serializer.save(student=self.request.user)
+        student = serializer.save(student=self.request.user.student)
         return Response({'response': student}, status=status.HTTP_200_OK)
 
 
